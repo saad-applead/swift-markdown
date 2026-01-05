@@ -635,6 +635,19 @@ struct MarkupParser {
         cmark_gfm_core_extensions_ensure_registered()
 
         var cmarkOptions = CMARK_OPT_TABLE_SPANS
+        
+        var stringToParse = string
+        if options.contains(.parseMath) {
+            // CommonMark consumes single backslashes before punctuation as escapes.
+            // We double the backslash before math delimiters so they survive into the AST
+            // where MathRewriter can find them.
+            stringToParse = stringToParse.replacingOccurrences(of: #"\("#, with: #"\\("#)
+            stringToParse = stringToParse.replacingOccurrences(of: #"\)"#, with: #"\\)"#)
+            stringToParse = stringToParse.replacingOccurrences(of: #"\["#, with: #"\\["#)
+            stringToParse = stringToParse.replacingOccurrences(of: #"\]"#, with: #"\\\]"#)
+            stringToParse = stringToParse.replacingOccurrences(of: #"\$"#, with: #"\\$"#)
+        }
+
         if !options.contains(.disableSmartOpts) {
             cmarkOptions |= CMARK_OPT_SMART
         }
@@ -647,7 +660,7 @@ struct MarkupParser {
         cmark_parser_attach_syntax_extension(parser, cmark_find_syntax_extension("table"))
         cmark_parser_attach_syntax_extension(parser, cmark_find_syntax_extension("strikethrough"))
         cmark_parser_attach_syntax_extension(parser, cmark_find_syntax_extension("tasklist"))
-        cmark_parser_feed(parser, string, string.utf8.count)
+        cmark_parser_feed(parser, stringToParse, stringToParse.utf8.count)
         let rawDocument = cmark_parser_finish(parser)
         let initialState = MarkupConverterState(source: source, iterator: cmark_iter_new(rawDocument), event: CMARK_EVENT_NONE, node: nil, options: options, headerSeen: false, pendingTableBody: nil).next()
         precondition(initialState.event == CMARK_EVENT_ENTER)
