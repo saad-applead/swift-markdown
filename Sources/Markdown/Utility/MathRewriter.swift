@@ -71,7 +71,7 @@ public struct MathRewriter: MarkupRewriter {
 
     private func processParagraphForBlockMath(_ paragraph: Paragraph) -> [Markup] {
         let text = paragraph.plainText
-        let pattern = #"(?<!\\)\$\$(.*?)(?<!\\)\$\$"#
+        let pattern = #"(?<!\\)(?:\$\$(.*?)(?<!\\)\$\$|\\\[(.*?)(?<!\\)\\\])"#
         let regex = try! NSRegularExpression(pattern: pattern, options: [.dotMatchesLineSeparators])
          
         let nsString = text as NSString
@@ -95,7 +95,7 @@ public struct MathRewriter: MarkupRewriter {
                 }
             }
             
-            let mathRange = match.range(at: 1)
+            let mathRange = match.range(at: 1).location != NSNotFound ? match.range(at: 1) : match.range(at: 2)
             let mathContent = nsString.substring(with: mathRange)
             results.append(BlockMath(mathContent))
             
@@ -126,7 +126,7 @@ public struct MathRewriter: MarkupRewriter {
                 nodesInBuffer = []
                 return
             }
-            let pattern = #"(?<!\\)\$(.+?)(?<!\\)\$"#
+            let pattern = #"(?<!\\)(?:\$(.+?)(?<!\\)\$|\\\((.*?)(?<!\\)\\\))"#
             let regex = try! NSRegularExpression(pattern: pattern, options: [])
             let nsString = textBuffer as NSString
             let matches = regex.matches(in: textBuffer, options: [], range: NSRange(location: 0, length: nsString.length))
@@ -144,7 +144,7 @@ public struct MathRewriter: MarkupRewriter {
                          target.append(Text(before))
                      }
                      
-                     let mathRange = match.range(at: 1)
+                     let mathRange = match.range(at: 1).location != NSNotFound ? match.range(at: 1) : match.range(at: 2)
                      let mathContent = nsString.substring(with: mathRange)
                      target.append(InlineMath(mathContent))
                      
