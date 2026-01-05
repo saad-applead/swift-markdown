@@ -87,4 +87,10 @@ extension MarkupRewriter {
     public mutating func visitText(_ text: Text) -> Result {
         return defaultVisit(text)
     }
+    public mutating func visitInlineMath(_ inlineMath: InlineMath) -> Result {
+        return defaultVisit(inlineMath)
+    }
+    public mutating func visitBlockMath(_ blockMath: BlockMath) -> Result {
+        return defaultVisit(blockMath)
+    }
 }

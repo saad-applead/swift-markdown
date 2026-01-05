@@ -81,6 +81,10 @@ func makeMarkup(_ data: _MarkupData) -> Markup {
         return DoxygenParameter(data)
     case .doxygenReturns:
         return DoxygenReturns(data)
+    case .inlineMath:
+        return InlineMath(data)
+    case .blockMath:
+        return BlockMath(data)
     }
 }
 

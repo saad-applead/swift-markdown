@@ -68,6 +68,9 @@ fileprivate enum CommonMarkNodeType: String {
     case tableCell = "table_cell"
 
     case taskListItem = "tasklist"
+    
+    case inlineMath = "inline_math"
+    case blockMath = "display_math"
 }
 
 /// Represents the result of a cmark conversion: the current `MarkupConverterState` and the resulting converted node.
@@ -232,6 +235,10 @@ struct MarkupParser {
             return convertTableCell(state)
         case .inlineAttributes:
             return convertInlineAttributes(state)
+        case .inlineMath:
+            return convertInlineMath(state)
+        case .blockMath:
+            return convertBlockMath(state)
         default:
             fatalError("Unknown cmark node type '\(state.nodeType.rawValue)' encountered during conversion")
         }
@@ -608,6 +615,22 @@ struct MarkupParser {
         return MarkupConversion(state: childConversion.state.next(), result: .inlineAttributes(attributes: attributes, parsedRange: parsedRange, childConversion.result))
      }
 
+    private static func convertInlineMath(_ state: MarkupConverterState) -> MarkupConversion<RawMarkup> {
+         precondition(state.event == CMARK_EVENT_ENTER)
+         precondition(state.nodeType == .inlineMath)
+         let parsedRange = state.range(state.node)
+         let math = getLiteralContent(node: state.node)
+         return MarkupConversion(state: state.next(), result: .inlineMath(parsedRange: parsedRange, math: math))
+    }
+
+    private static func convertBlockMath(_ state: MarkupConverterState) -> MarkupConversion<RawMarkup> {
+         precondition(state.event == CMARK_EVENT_ENTER)
+         precondition(state.nodeType == .blockMath)
+         let parsedRange = state.range(state.node)
+         let math = getLiteralContent(node: state.node)
+         return MarkupConversion(state: state.next(), result: .blockMath(parsedRange: parsedRange, math: math))
+    }
+
     static func parseString(_ string: String, source: URL?, options: ParseOptions) -> Document {
         cmark_gfm_core_extensions_ensure_registered()
 
@@ -647,7 +670,16 @@ struct MarkupParser {
 
         let data = _MarkupData(AbsoluteRawMarkup(markup: conversion.result,
                                                 metadata: MarkupMetadata(id: .newRoot(), indexInParent: 0)))
-        return makeMarkup(data) as! Document
+        let document = makeMarkup(data) as! Document
+        
+        if options.contains(.parseMath) {
+             var rewriter = MathRewriter()
+             if let rewritten = rewriter.visit(document) as? Document {
+                 return rewritten
+             }
+        }
+        
+        return document
     }
 }
 

@@ -314,6 +314,22 @@ public protocol MarkupVisitor<Result> {
      - returns: The result of the visit.
      */
     mutating func visitDoxygenReturns(_ doxygenReturns: DoxygenReturns) -> Result
+
+    /**
+     Visit a `InlineMath` element and return the result.
+
+     - parameter inlineMath: A `InlineMath` element.
+     - returns: The result of the visit.
+     */
+    mutating func visitInlineMath(_ inlineMath: InlineMath) -> Result
+
+    /**
+     Visit a `BlockMath` element and return the result.
+
+     - parameter blockMath: A `BlockMath` element.
+     - returns: The result of the visit.
+     */
+    mutating func visitBlockMath(_ blockMath: BlockMath) -> Result
 }
 
 extension MarkupVisitor {
@@ -427,5 +443,11 @@ extension MarkupVisitor {
     }
     public mutating func visitDoxygenReturns(_ doxygenReturns: DoxygenReturns) -> Result {
         return defaultVisit(doxygenReturns)
+    }
+    public mutating func visitInlineMath(_ inlineMath: InlineMath) -> Result {
+        return defaultVisit(inlineMath)
+    }
+    public mutating func visitBlockMath(_ blockMath: BlockMath) -> Result {
+        return defaultVisit(blockMath)
     }
 }

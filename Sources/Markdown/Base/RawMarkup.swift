@@ -57,6 +57,9 @@ enum RawMarkupData: Equatable {
     case doxygenAbstract
     case doxygenParam(name: String)
     case doxygenReturns
+
+    case inlineMath(String)
+    case blockMath(String)
 }
 
 extension RawMarkupData {
@@ -363,6 +366,14 @@ final class RawMarkup: ManagedBuffer<RawMarkupHeader, RawMarkup> {
 
     static func doxygenReturns(parsedRange: SourceRange?, _ children: [RawMarkup]) -> RawMarkup {
         return .create(data: .doxygenReturns, parsedRange: parsedRange, children: children)
+    }
+
+    static func inlineMath(parsedRange: SourceRange?, math: String) -> RawMarkup {
+        return .create(data: .inlineMath(math), parsedRange: parsedRange, children: [])
+    }
+
+    static func blockMath(parsedRange: SourceRange?, math: String) -> RawMarkup {
+        return .create(data: .blockMath(math), parsedRange: parsedRange, children: [])
     }
 }
 
