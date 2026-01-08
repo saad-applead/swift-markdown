@@ -93,4 +93,7 @@ extension MarkupRewriter {
     public mutating func visitBlockMath(_ blockMath: BlockMath) -> Result {
         return defaultVisit(blockMath)
     }
+    public mutating func visitNewLine(_ newline: NewLine) -> Result {
+        return defaultVisit(newline)
+    }
 }

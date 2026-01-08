@@ -657,18 +657,19 @@ public struct MarkupFormatter: MarkupWalker {
 
     public mutating func visitDocument(_ document: Document) {
         descendInto(document)
+        addressPendingNewlines(for: document)
     }
 
     public mutating func visitParagraph(_ paragraph: Paragraph) {
         if paragraph.indexInParent > 0 {
-            ensurePrecedingNewlineCount(atLeast: 2)
+            ensurePrecedingNewlineCount(atLeast: (paragraph.previousSibling is NewLine) ? 1 : 2)
         }
         descendInto(paragraph)
     }
 
     public mutating func visitCodeBlock(_ codeBlock: CodeBlock) {
         if codeBlock.indexInParent > 0 {
-            ensurePrecedingNewlineCount(atLeast: 2)
+            ensurePrecedingNewlineCount(atLeast: (codeBlock.previousSibling is NewLine) ? 1 : 2)
         }
 
         let lines = codeBlock.trimmedLineSegments
@@ -712,9 +713,11 @@ public struct MarkupFormatter: MarkupWalker {
             if parent is BlockQuote {
                 queueNewline()
             } else if blockQuote.indexInParent > 0 {
-                queueNewline()
-                addressPendingNewlines(for: parent)
-                queueNewline()
+                if let prev = blockQuote.previousSibling, !(prev is NewLine) {
+                    queueNewline()
+                    addressPendingNewlines(for: parent)
+                    queueNewline()
+                }
             }
         }
         descendInto(blockQuote)
@@ -722,21 +725,21 @@ public struct MarkupFormatter: MarkupWalker {
 
     mutating public func visitUnorderedList(_ unorderedList: UnorderedList) {
         if unorderedList.indexInParent > 0 && !(unorderedList.parent?.parent is ListItemContainer) {
-            ensurePrecedingNewlineCount(atLeast: 2)
+            ensurePrecedingNewlineCount(atLeast: (unorderedList.previousSibling is NewLine) ? 1 : 2)
         }
         descendInto(unorderedList)
     }
 
     mutating public func visitOrderedList(_ orderedList: OrderedList) {
         if orderedList.indexInParent > 0 && !(orderedList.parent?.parent is ListItemContainer) {
-            ensurePrecedingNewlineCount(atLeast: 2)
+            ensurePrecedingNewlineCount(atLeast: (orderedList.previousSibling is NewLine) ? 1 : 2)
         }
         descendInto(orderedList)
     }
 
     public mutating func visitHTMLBlock(_ html: HTMLBlock) {
         if html.indexInParent > 0 {
-            ensurePrecedingNewlineCount(atLeast: 2)
+            ensurePrecedingNewlineCount(atLeast: (html.previousSibling is NewLine) ? 1 : 2)
         }
         for lineSegment in html.trimmedLineSegments {
             print(lineSegment, for: html)
@@ -766,7 +769,7 @@ public struct MarkupFormatter: MarkupWalker {
 
     public mutating func visitHeading(_ heading: Heading) {
         if heading.indexInParent > 0 {
-            ensurePrecedingNewlineCount(atLeast: 2)
+            ensurePrecedingNewlineCount(atLeast: (heading.previousSibling is NewLine) ? 1 : 2)
         }
 
         if case .setext = formattingOptions.preferredHeadingStyle,
@@ -795,7 +798,7 @@ public struct MarkupFormatter: MarkupWalker {
 
     public mutating func visitThematicBreak(_ thematicBreak: ThematicBreak) {
         if thematicBreak.indexInParent > 0 {
-            ensurePrecedingNewlineCount(atLeast: 2)
+            ensurePrecedingNewlineCount(atLeast: (thematicBreak.previousSibling is NewLine) ? 1 : 2)
         }
         let breakString = String(repeating: formattingOptions.thematicBreakCharacter.rawValue,
                                  count: Int(formattingOptions.thematicBreakLength))
@@ -803,8 +806,15 @@ public struct MarkupFormatter: MarkupWalker {
     }
 
     public mutating func visitNewLine(_ newline: NewLine) {
-        print("", for: newline)
-        queueNewline()
+        if newline.indexInParent == 0 {
+            ensurePrecedingNewlineCount(atLeast: 1)
+        } else if let prev = newline.previousSibling, prev is NewLine {
+            ensurePrecedingNewlineCount(atLeast: 1)
+            queueNewline(1)
+        } else {
+            ensurePrecedingNewlineCount(atLeast: 2)
+        }
+        addressPendingNewlines(for: newline)
     }
 
     public mutating func visitInlineCode(_ inlineCode: InlineCode) {
@@ -828,7 +838,7 @@ public struct MarkupFormatter: MarkupWalker {
 
     public mutating func visitBlockMath(_ blockMath: BlockMath) {
         if blockMath.indexInParent > 0 {
-            ensurePrecedingNewlineCount(atLeast: 2)
+            ensurePrecedingNewlineCount(atLeast: (blockMath.previousSibling is NewLine) ? 1 : 2)
         }
         print("$$\(blockMath.math)$$", for: blockMath)
         queueNewline()
@@ -1152,7 +1162,7 @@ public struct MarkupFormatter: MarkupWalker {
 
     public mutating func visitBlockDirective(_ blockDirective: BlockDirective) {
         if blockDirective.indexInParent > 0 {
-            ensurePrecedingNewlineCount(atLeast: 2)
+            ensurePrecedingNewlineCount(atLeast: (blockDirective.previousSibling is NewLine) ? 1 : 2)
         }
         print("@", for: blockDirective)
         print(blockDirective.name, for: blockDirective)
@@ -1219,6 +1229,11 @@ public struct MarkupFormatter: MarkupWalker {
 
     private mutating func ensureDoxygenCommandPrecedingNewline(for element: Markup) {
         guard let previousSibling = element.previousSibling else {
+            return
+        }
+        
+        if previousSibling is NewLine {
+            ensurePrecedingNewlineCount(atLeast: 1)
             return
         }
 
