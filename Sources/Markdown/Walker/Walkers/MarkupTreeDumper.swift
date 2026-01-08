@@ -290,4 +290,8 @@ struct MarkupTreeDumper: MarkupWalker {
     mutating func visitDoxygenParameter(_ doxygenParam: DoxygenParameter) -> () {
         dump(doxygenParam, customDescription: "parameter: \(doxygenParam.name)")
     }
+
+    mutating func visitNewLine(_ newline: NewLine) {
+        dump(newline)
+    }
 }

@@ -330,6 +330,14 @@ public protocol MarkupVisitor<Result> {
      - returns: The result of the visit.
      */
     mutating func visitBlockMath(_ blockMath: BlockMath) -> Result
+
+    /**
+     Visit a `NewLine` element and return the result.
+
+     - parameter newline: A `NewLine` element.
+     - returns: The result of the visit.
+     */
+    mutating func visitNewLine(_ newline: NewLine) -> Result
 }
 
 extension MarkupVisitor {
@@ -449,5 +457,8 @@ extension MarkupVisitor {
     }
     public mutating func visitBlockMath(_ blockMath: BlockMath) -> Result {
         return defaultVisit(blockMath)
+    }
+    public mutating func visitNewLine(_ newline: NewLine) -> Result {
+        return defaultVisit(newline)
     }
 }

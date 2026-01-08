@@ -8,29 +8,29 @@
  See https://swift.org/CONTRIBUTORS.txt for Swift project authors
 */
 
-/// A soft break.
-public struct SoftBreak: RecurringInlineMarkup {
+/// A newline.
+public struct NewLine: BlockMarkup {
     public var _data: _MarkupData
-
-    init(_ raw: RawMarkup) throws {
-        guard case .softBreak = raw.data else {
-            throw RawMarkup.Error.concreteConversionError(from: raw, to: SoftBreak.self)
-        }
-        let absoluteRaw = AbsoluteRawMarkup(markup: raw, metadata: MarkupMetadata(id: .newRoot(), indexInParent: 0))
-        self.init(_MarkupData(absoluteRaw))
-    }
 
     init(_ data: _MarkupData) {
         self._data = data
+    }
+
+    init(_ raw: RawMarkup) throws {
+        guard case .newline = raw.data else {
+            throw RawMarkup.Error.concreteConversionError(from: raw, to: NewLine.self)
+        }
+        let absoluteRaw = AbsoluteRawMarkup(markup: raw, metadata: MarkupMetadata(id: .newRoot(), indexInParent: 0))
+        self.init(_MarkupData(absoluteRaw))
     }
 }
 
 // MARK: - Public API
 
-public extension SoftBreak {
-    /// Create a soft line break.
+public extension NewLine {
+    /// Create a newline.
     init() {
-        try! self.init(.softBreak(parsedRange: nil))
+        try! self.init(.newline(parsedRange: nil))
     }
 
     // MARK: PlainTextConvertibleMarkup
@@ -42,6 +42,6 @@ public extension SoftBreak {
     // MARK: Visitation
 
     func accept<V: MarkupVisitor>(_ visitor: inout V) -> V.Result {
-        return visitor.visitSoftBreak(self)
+        return visitor.visitNewLine(self)
     }
 }

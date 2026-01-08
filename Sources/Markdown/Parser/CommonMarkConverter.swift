@@ -262,10 +262,47 @@ struct MarkupParser {
         let root = originalState.node
         var state = originalState.next()
         var layout = [RawMarkup]()
+        
+        var lastEndLine: Int = 0
+        if let root = root {
+            let startLine = Int(cmark_node_get_start_line(root))
+            if startLine > 0 {
+                lastEndLine = startLine - 1
+            }
+        }
 
         while state.node != root && state.event != CMARK_EVENT_EXIT {
+            let currentNode = state.node
+            
+            if originalState.nodeType == .document || 
+               originalState.nodeType == .blockQuote || 
+               originalState.nodeType == .item ||
+               originalState.nodeType == .customBlock {
+                
+                let startLine = Int(cmark_node_get_start_line(currentNode))
+                if startLine > 0 && lastEndLine > 0 && startLine > lastEndLine + 1 {
+                    let gapCount = startLine - lastEndLine - 1
+                    for i in 1...gapCount {
+                        let line = lastEndLine + i
+                        let range = SourceRange(uncheckedBounds: (
+                            SourceLocation(line: line, column: 1, source: state.source),
+                            SourceLocation(line: line, column: 1, source: state.source)
+                        ))
+                        layout.append(.newline(parsedRange: range))
+                    }
+                }
+            }
+
             let conversion = convertAnyElement(state)
             layout.append(conversion.result)
+            
+            if let currentNode = currentNode {
+                let endLine = Int(cmark_node_get_end_line(currentNode))
+                if endLine > 0 {
+                    lastEndLine = endLine
+                }
+            }
+            
             state = conversion.state
         }
         return MarkupConversion(state: state, result: layout)

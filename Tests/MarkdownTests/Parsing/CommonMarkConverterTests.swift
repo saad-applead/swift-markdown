@@ -33,4 +33,18 @@ class CommonMarkConverterTests: XCTestCase {
         let document = Document(parsing: text, source: nil, options: [.parseBlockDirectives, .parseSymbolLinks])
         XCTAssertEqual(expectedDump, document.debugDescription(options: .printSourceLocations))
     }
+
+    func testNewlinePreservation() {
+        let text = "Line 1\n\nLine 2"
+        let document = Document(parsing: text)
+        let expectedDump = """
+        Document
+        ├─ Paragraph
+        │  └─ Text "Line 1"
+        ├─ NewLine
+        └─ Paragraph
+           └─ Text "Line 2"
+        """
+        XCTAssertEqual(expectedDump, document.debugDescription())
+    }
 }

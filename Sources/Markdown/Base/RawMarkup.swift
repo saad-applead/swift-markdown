@@ -60,6 +60,7 @@ enum RawMarkupData: Equatable {
 
     case inlineMath(String)
     case blockMath(String)
+    case newline
 }
 
 extension RawMarkupData {
@@ -374,6 +375,10 @@ final class RawMarkup: ManagedBuffer<RawMarkupHeader, RawMarkup> {
 
     static func blockMath(parsedRange: SourceRange?, math: String) -> RawMarkup {
         return .create(data: .blockMath(math), parsedRange: parsedRange, children: [])
+    }
+
+    static func newline(parsedRange: SourceRange?) -> RawMarkup {
+        return .create(data: .newline, parsedRange: parsedRange, children: [])
     }
 }
 

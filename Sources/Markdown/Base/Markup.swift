@@ -85,6 +85,8 @@ func makeMarkup(_ data: _MarkupData) -> Markup {
         return InlineMath(data)
     case .blockMath:
         return BlockMath(data)
+    case .newline:
+        return NewLine(data)
     }
 }
 

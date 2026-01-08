@@ -802,6 +802,11 @@ public struct MarkupFormatter: MarkupWalker {
         print(breakString, for: thematicBreak)
     }
 
+    public mutating func visitNewLine(_ newline: NewLine) {
+        print("", for: newline)
+        queueNewline()
+    }
+
     public mutating func visitInlineCode(_ inlineCode: InlineCode) {
         let savedState = state
         softWrapPrint("`\(inlineCode.code)`", for: inlineCode)
@@ -815,6 +820,18 @@ public struct MarkupFormatter: MarkupWalker {
             queueNewline()
             softWrapPrint("`\(inlineCode.code)`", for: inlineCode)
         }
+    }
+
+    public mutating func visitInlineMath(_ inlineMath: InlineMath) {
+        print("$\(inlineMath.math)$", for: inlineMath)
+    }
+
+    public mutating func visitBlockMath(_ blockMath: BlockMath) {
+        if blockMath.indexInParent > 0 {
+            ensurePrecedingNewlineCount(atLeast: 2)
+        }
+        print("$$\(blockMath.math)$$", for: blockMath)
+        queueNewline()
     }
 
     public mutating func visitEmphasis(_ emphasis: Emphasis) {
