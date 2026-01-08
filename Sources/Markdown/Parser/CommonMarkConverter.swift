@@ -263,7 +263,7 @@ struct MarkupParser {
         var state = originalState.next()
         var layout = [RawMarkup]()
         
-        var lastEndLine: Int = 0
+        var lastEndLine: Int = -1
         if let root = root {
             let startLine = Int(cmark_node_get_start_line(root))
             if startLine > 0 {
@@ -276,11 +276,12 @@ struct MarkupParser {
             
             if originalState.nodeType == .document || 
                originalState.nodeType == .blockQuote || 
+               originalState.nodeType == .list ||
                originalState.nodeType == .item ||
                originalState.nodeType == .customBlock {
                 
                 let startLine = Int(cmark_node_get_start_line(currentNode))
-                if startLine > 0 && lastEndLine > 0 && startLine > lastEndLine + 1 {
+                if startLine > 0 && lastEndLine >= 0 && startLine > lastEndLine {
                     let gapCount = startLine - lastEndLine - 1
                     for i in 1...gapCount {
                         let line = lastEndLine + i
@@ -305,6 +306,27 @@ struct MarkupParser {
             
             state = conversion.state
         }
+        
+        if let root = root, 
+           (originalState.nodeType == .document || 
+            originalState.nodeType == .blockQuote || 
+            originalState.nodeType == .list ||
+            originalState.nodeType == .item ||
+            originalState.nodeType == .customBlock) {
+            let rootEndLine = Int(cmark_node_get_end_line(root))
+            if rootEndLine > 0 && lastEndLine >= 0 && rootEndLine > lastEndLine {
+                let gapCount = rootEndLine - lastEndLine
+                for i in 1...gapCount {
+                    let line = lastEndLine + i
+                    let range = SourceRange(uncheckedBounds: (
+                        SourceLocation(line: line, column: 1, source: state.source),
+                        SourceLocation(line: line, column: 1, source: state.source)
+                    ))
+                    layout.append(.newline(parsedRange: range))
+                }
+            }
+        }
+
         return MarkupConversion(state: state, result: layout)
     }
 
